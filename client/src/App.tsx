@@ -14,11 +14,15 @@ import Hospitals from "./pages/Hospitals";
 import HospitalDetail from "./pages/HospitalDetail";
 import Treatments from "./pages/Treatments";
 import TreatmentDetail from "./pages/TreatmentDetail";
+import Network from "./pages/Network";
+import NetworkHospitals from "./pages/NetworkHospitals";
+import NetworkPartners from "./pages/NetworkPartners";
 import Compare from "./pages/Compare";
 import Consultation from "./pages/Consultation";
 import SkinPackageLanding from "./pages/SkinPackageLanding";
 import AuthConfirm from "./pages/AuthConfirm";
 import ClosedBetaOps from "./pages/ClosedBetaOps";
+import AdminDashboard from "./pages/AdminDashboard";
 import CaseDashboard from "./pages/CaseDashboard";
 import QuoteBookingMvp from "./pages/QuoteBookingMvp";
 import AdminLandingRoutes from "./pages/AdminLandingRoutes";
@@ -63,6 +67,14 @@ function ClosedBetaOpsRoute() {
   return (
     <InternalRoute>
       <ClosedBetaOps />
+    </InternalRoute>
+  );
+}
+
+function AdminDashboardRoute() {
+  return (
+    <InternalRoute>
+      <AdminDashboard />
     </InternalRoute>
   );
 }
@@ -165,6 +177,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/network" component={Network} />
+      <Route path="/network/hospitals" component={NetworkHospitals} />
+      <Route path="/network/partners" component={NetworkPartners} />
       <Route path="/hospitals" component={Hospitals} />
       <Route path="/hospitals/:slug" component={HospitalDetail} />
       <Route path="/treatments" component={Treatments} />
@@ -174,6 +189,7 @@ function Router() {
       <Route path="/auth/confirm" component={AuthConfirm} />
       <Route path="/admin" component={AdminEntryRoute} />
       <Route path="/admin/" component={AdminEntryRoute} />
+      <Route path="/admin/dashboard" component={AdminDashboardRoute} />
       <Route path="/admin/beta" component={ClosedBetaOpsRoute} />
       <Route path="/admin/cases" component={CaseDashboardRoute} />
       <Route path="/admin/quote-booking" component={QuoteBookingRoute} />

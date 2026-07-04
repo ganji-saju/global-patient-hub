@@ -33,6 +33,7 @@ export default function Navbar() {
     location.startsWith("/provider");
 
   const publicNavLinks = [
+    { href: "/network", label: "GCL Network" },
     { href: "/en/korea-skin-clinic-gangnam", label: t("nav.skinPackages") },
     { href: "/hospitals", label: t("nav.hospitals") },
     { href: "/treatments", label: t("nav.treatments") },

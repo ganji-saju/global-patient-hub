@@ -25,12 +25,17 @@ export const OPS_PROVIDER_ROLES = [
 export const OPS_SHARED_WORKFLOW_ROLES = OPS_ALL_ROLES;
 
 export const OPS_ROLE_HOME: Record<OpsRole, string> = {
-  admin: "/admin/ops-health",
+  admin: "/admin/dashboard",
   partner: "/partner/cases",
   provider: "/provider/quotes",
 };
 
 export const OPS_NAVIGATION_ITEMS: readonly OpsNavigationItem[] = [
+  {
+    href: "/admin/dashboard",
+    label: "운영 대시보드",
+    roles: OPS_ADMIN_ONLY_ROLES,
+  },
   {
     href: "/admin/ops-health",
     label: "운영 점검",
