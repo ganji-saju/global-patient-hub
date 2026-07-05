@@ -11,62 +11,81 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/contexts/I18nContext";
 import { SAMPLE_HOSPITALS } from "@/lib/sampleData";
 
 const roleCards = [
   {
     icon: HeartPulse,
-    title: "Patients",
-    text: "Submit one structured request with care goals, language, budget, travel dates, and consent. GCL routes the case to suitable providers and support partners.",
+    titleKey: "network.role.patient.title",
+    textKey: "network.role.patient.text",
     href: "/consultation",
-    action: "Start consultation",
+    actionKey: "network.role.patient.action",
   },
   {
     icon: Building2,
-    title: "Hospitals",
-    text: "Publish a verified profile, maintain doctors and treatment pricing, receive quote requests, and coordinate slots from one provider workflow.",
+    titleKey: "network.role.hospital.title",
+    textKey: "network.role.hospital.text",
     href: "/network/hospitals",
-    action: "Hospital network",
+    actionKey: "network.role.hospital.action",
   },
   {
     icon: Handshake,
-    title: "Partners",
-    text: "Support cases as agencies, interpreters, travel teams, and concierges with scoped access to assigned patient journeys.",
+    titleKey: "network.role.partner.title",
+    textKey: "network.role.partner.text",
     href: "/network/partners",
-    action: "Partner network",
+    actionKey: "network.role.partner.action",
   },
 ];
 
 const operatingFlow = [
   [
     "01",
-    "Patient intake",
-    "Goals, travel window, budget, language, and consent are captured in a single request.",
+    "network.flow.step1.title",
+    "network.flow.step1.text",
   ],
   [
     "02",
-    "GCL triage",
-    "Eligibility, provider fit, partner support needs, and risk flags are reviewed by operations.",
+    "network.flow.step2.title",
+    "network.flow.step2.text",
   ],
   [
     "03",
-    "Provider quote",
-    "Hospitals return separated medical fees, deposit terms, availability, and recovery notes.",
+    "network.flow.step3.title",
+    "network.flow.step3.text",
   ],
   [
     "04",
-    "Partner support",
-    "Assigned partners handle non-medical services only when the patient has consented.",
+    "network.flow.step4.title",
+    "network.flow.step4.text",
   ],
   [
     "05",
-    "Booking path",
-    "Temporary slot holds, deposit links, alerts, and confirmations keep the case moving.",
+    "network.flow.step5.title",
+    "network.flow.step5.text",
   ],
 ];
 
 export default function Network() {
+  const { t } = useI18n();
   const heroImage = SAMPLE_HOSPITALS[0].coverImage;
+  const standards = [
+    {
+      icon: ShieldCheck,
+      title: t("network.standard.verification.title"),
+      text: t("network.standard.verification.text"),
+    },
+    {
+      icon: CalendarCheck,
+      title: t("network.standard.availability.title"),
+      text: t("network.standard.availability.text"),
+    },
+    {
+      icon: Languages,
+      title: t("network.standard.routing.title"),
+      text: t("network.standard.routing.text"),
+    },
+  ];
 
   return (
     <Layout>
@@ -82,15 +101,13 @@ export default function Network() {
           <div className="max-w-3xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-teal-100">
               <Languages className="size-4" />
-              GCL Network
+              {t("network.hero.kicker")}
             </div>
             <h1 className="text-balance font-serif text-5xl sm:text-6xl">
-              One operating layer for patients, hospitals, and care partners.
+              {t("network.hero.title")}
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-ink-100">
-              Global Connected Lab coordinates Korean medical tourism as a
-              three-sided network: patient demand, verified clinical supply, and
-              trusted non-medical support.
+              {t("network.hero.copy")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/consultation">
@@ -98,7 +115,7 @@ export default function Network() {
                   size="lg"
                   className="h-12 bg-teal-700 px-6 text-white hover:bg-teal-800"
                 >
-                  Start consultation
+                  {t("network.hero.ctaConsult")}
                   <ArrowRight className="size-4" />
                 </Button>
               </Link>
@@ -108,7 +125,7 @@ export default function Network() {
                   variant="outline"
                   className="h-12 border-white/40 bg-white/10 px-6 text-white hover:bg-white/20"
                 >
-                  Join as hospital
+                  {t("network.hero.ctaHospital")}
                 </Button>
               </Link>
               <Link href="/network/partners">
@@ -117,7 +134,7 @@ export default function Network() {
                   variant="outline"
                   className="h-12 border-white/40 bg-white/10 px-6 text-white hover:bg-white/20"
                 >
-                  Join as partner
+                  {t("network.hero.ctaPartner")}
                 </Button>
               </Link>
             </div>
@@ -129,35 +146,33 @@ export default function Network() {
         <div className="container-wide">
           <div className="mb-10 max-w-3xl">
             <h2 className="font-serif text-4xl text-ink-950">
-              Three entrances, one case record
+              {t("network.roles.heading")}
             </h2>
             <p className="mt-3 text-ink-600">
-              GCL keeps each actor focused on the information and actions they
-              need, while operations maintains the whole patient journey from
-              consultation to booking.
+              {t("network.roles.copy")}
             </p>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
             {roleCards.map(card => (
               <div
-                key={card.title}
+                key={card.titleKey}
                 className="rounded-lg border border-ink-200 bg-white p-5"
               >
                 <div className="mb-5 grid size-11 place-items-center rounded-md bg-teal-50 text-teal-700">
                   <card.icon className="size-5" />
                 </div>
                 <h3 className="font-serif text-3xl text-ink-950">
-                  {card.title}
+                  {t(card.titleKey)}
                 </h3>
                 <p className="mt-3 min-h-24 text-sm leading-6 text-ink-600">
-                  {card.text}
+                  {t(card.textKey)}
                 </p>
                 <Link href={card.href}>
                   <Button
                     variant="outline"
                     className="mt-5 w-full justify-between border-ink-300 text-ink-800"
                   >
-                    {card.action}
+                    {t(card.actionKey)}
                     <ArrowRight className="size-4" />
                   </Button>
                 </Link>
@@ -172,26 +187,26 @@ export default function Network() {
           <div>
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-teal-700">
               <ClipboardList className="size-4" />
-              Network operating flow
+              {t("network.flow.kicker")}
             </div>
             <h2 className="font-serif text-4xl text-ink-950">
-              A request should never become a spreadsheet maze.
+              {t("network.flow.title")}
             </h2>
             <p className="mt-4 text-sm leading-6 text-ink-600">
-              The network pages make the public promise clear. The admin console
-              keeps the operational promise measurable: cases, provider quotes,
-              partner requests, holds, alerts, and payments.
+              {t("network.flow.copy")}
             </p>
           </div>
           <div className="overflow-hidden rounded-lg border border-ink-200 bg-white">
-            {operatingFlow.map(([step, title, text]) => (
+            {operatingFlow.map(([step, titleKey, textKey]) => (
               <div
                 key={step}
                 className="grid gap-3 border-b border-ink-100 p-5 last:border-b-0 md:grid-cols-[88px_220px_1fr]"
               >
                 <div className="font-serif text-2xl text-teal-700">{step}</div>
-                <div className="font-semibold text-ink-950">{title}</div>
-                <div className="text-sm leading-6 text-ink-600">{text}</div>
+                <div className="font-semibold text-ink-950">{t(titleKey)}</div>
+                <div className="text-sm leading-6 text-ink-600">
+                  {t(textKey)}
+                </div>
               </div>
             ))}
           </div>
@@ -200,23 +215,7 @@ export default function Network() {
 
       <section className="section-padding bg-white">
         <div className="container-wide grid gap-4 md:grid-cols-3">
-          {[
-            {
-              icon: ShieldCheck,
-              title: "Verification",
-              text: "Hospitals and partners are tracked by registration, data quality, SLA, and operating readiness.",
-            },
-            {
-              icon: CalendarCheck,
-              title: "Availability",
-              text: "Quotes and reservations connect to temporary holds and confirmation workflows.",
-            },
-            {
-              icon: Languages,
-              title: "Global routing",
-              text: "Language, market, and support preferences determine what each actor sees next.",
-            },
-          ].map(item => (
+          {standards.map(item => (
             <div
               key={item.title}
               className="rounded-lg border border-ink-200 bg-ink-50 p-5"

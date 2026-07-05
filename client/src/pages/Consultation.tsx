@@ -70,14 +70,14 @@ const BUDGETS = [
 ];
 
 const MARKET_OPTIONS = [
-  { value: "japan", label: "Japan" },
-  { value: "taiwan", label: "Taiwan" },
-  { value: "china", label: "China / Hong Kong" },
-  { value: "southeast_asia", label: "Southeast Asia" },
-  { value: "north_america", label: "North America" },
-  { value: "middle_east", label: "Middle East" },
-  { value: "europe", label: "Europe" },
-  { value: "other", label: "Other market" },
+  { value: "japan", labelKey: "consult.market.japan" },
+  { value: "taiwan", labelKey: "consult.market.taiwan" },
+  { value: "china", labelKey: "consult.market.china" },
+  { value: "southeast_asia", labelKey: "consult.market.southeastAsia" },
+  { value: "north_america", labelKey: "consult.market.northAmerica" },
+  { value: "middle_east", labelKey: "consult.market.middleEast" },
+  { value: "europe", labelKey: "consult.market.europe" },
+  { value: "other", labelKey: "consult.market.other" },
 ];
 
 const PARTNER_ASSISTANCE_MODES = [
@@ -103,24 +103,24 @@ const PARTNER_SERVICE_OPTIONS = [
 
 const CONSULTATION_STEPS = [
   {
-    title: "Contact",
-    heading: "Patient contact",
-    copy: "Tell GCL who should receive the coordinator follow-up.",
+    titleKey: "consult.step.contact.title",
+    headingKey: "consult.step.contact.heading",
+    copyKey: "consult.step.contact.copy",
   },
   {
-    title: "Care request",
-    heading: "Treatment and provider request",
-    copy: "Choose the package, market, treatment area, hospital preference, and budget.",
+    titleKey: "consult.step.care.title",
+    headingKey: "consult.step.care.heading",
+    copyKey: "consult.step.care.copy",
   },
   {
-    title: "Travel",
-    heading: "Schedule and eligibility",
-    copy: "Add your preferred visit dates and any Korea eligibility details.",
+    titleKey: "consult.step.travel.title",
+    headingKey: "consult.step.travel.heading",
+    copyKey: "consult.step.travel.copy",
   },
   {
-    title: "Support",
-    heading: "Partner support and consent",
-    copy: "Choose whether non-medical partner support is needed before submitting.",
+    titleKey: "consult.step.support.title",
+    headingKey: "consult.step.support.heading",
+    copyKey: "consult.step.support.copy",
   },
 ] as const;
 
@@ -374,7 +374,7 @@ export default function Consultation() {
       <section className="border-b border-ink-200 bg-ink-950 py-14 text-white">
         <div className="container-wide">
           <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-teal-100">
-            GCL intake
+            {t("consult.intakeKicker")}
           </div>
           <h1 className="font-serif text-5xl">{t("consult.title")}</h1>
           <p className="mt-4 max-w-2xl text-lg leading-8 text-ink-300">
@@ -392,7 +392,7 @@ export default function Consultation() {
                 const complete = index < stepIndex;
                 return (
                   <button
-                    key={step.title}
+                    key={step.titleKey}
                     type="button"
                     onClick={() => {
                       if (index <= stepIndex) setStepIndex(index);
@@ -409,7 +409,7 @@ export default function Consultation() {
                       0{index + 1}
                     </div>
                     <div className="mt-1 text-sm font-semibold text-ink-950">
-                      {step.title}
+                      {t(step.titleKey)}
                     </div>
                   </button>
                 );
@@ -422,10 +422,10 @@ export default function Consultation() {
             >
               <div className="border-b border-ink-100 pb-5">
                 <h2 className="font-serif text-3xl text-ink-950">
-                  {currentStep.heading}
+                  {t(currentStep.headingKey)}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-ink-500">
-                  {currentStep.copy}
+                  {t(currentStep.copyKey)}
                 </p>
               </div>
 
@@ -544,7 +544,7 @@ export default function Consultation() {
                       >
                         {MARKET_OPTIONS.map(option => (
                           <option key={option.value} value={option.value}>
-                            {option.label}
+                            {t(option.labelKey)}
                           </option>
                         ))}
                       </select>
@@ -771,7 +771,7 @@ export default function Consultation() {
                   className="border-ink-300 text-ink-800 disabled:opacity-50"
                 >
                   <ArrowLeft className="size-4" />
-                  Back
+                  {t("consult.back")}
                 </Button>
                 {isLastStep ? (
                   <Button
@@ -788,7 +788,7 @@ export default function Consultation() {
                     onClick={goNext}
                     className="h-12 bg-teal-700 px-6 text-white hover:bg-teal-800"
                   >
-                    Continue
+                    {t("consult.continue")}
                     <ArrowRight className="size-4" />
                   </Button>
                 )}
@@ -799,19 +799,19 @@ export default function Consultation() {
           <aside className="space-y-4">
             <div className="rounded-lg border border-ink-200 bg-white p-5">
               <h2 className="font-serif text-2xl text-ink-950">
-                Request summary
+                {t("consult.summary.title")}
               </h2>
               <div className="mt-4 grid gap-3 text-sm">
                 <SummaryRow
-                  label="Package"
+                  label={t("consult.summary.package")}
                   value={
                     selectedPackage?.shortTitle ??
                     selectedPackageId ??
-                    "Not selected"
+                    t("consult.summary.notSelected")
                   }
                 />
                 <SummaryRow
-                  label="Hospital"
+                  label={t("consult.summary.hospital")}
                   value={
                     selectedHospital
                       ? getLocalizedHospitalName(selectedHospital, lang)
@@ -819,13 +819,15 @@ export default function Consultation() {
                   }
                 />
                 <SummaryRow
-                  label="Budget"
+                  label={t("consult.summary.budget")}
                   value={selectedBudget || t("consult.selectBudget")}
                 />
                 <SummaryRow
-                  label="Partner support"
+                  label={t("consult.summary.partnerSupport")}
                   value={
-                    partnerSupportRequested ? "Requested" : "Platform direct"
+                    partnerSupportRequested
+                      ? t("consult.summary.requested")
+                      : t("consult.summary.platformDirect")
                   }
                 />
               </div>

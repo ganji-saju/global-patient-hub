@@ -134,44 +134,44 @@ function HeroSection() {
   const actors = [
     {
       icon: HeartPulse,
-      eyebrow: "Patients",
-      title: "Share care goals once",
-      text: "Treatment needs, travel window, budget, language, and consent are captured in one intake.",
+      eyebrow: t("publicHome.network.actor.patient.eyebrow"),
+      title: t("publicHome.network.actor.patient.title"),
+      text: t("publicHome.network.actor.patient.text"),
     },
     {
       icon: Building2,
-      eyebrow: "Hospitals",
-      title: "Respond with clear quotes",
-      text: "Verified providers receive structured requests and return medical fees, deposits, and schedule options.",
+      eyebrow: t("publicHome.network.actor.hospital.eyebrow"),
+      title: t("publicHome.network.actor.hospital.title"),
+      text: t("publicHome.network.actor.hospital.text"),
     },
     {
       icon: Handshake,
-      eyebrow: "Partners",
-      title: "Coordinate non-medical support",
-      text: "Agencies, interpreters, travel teams, and concierges can support cases with scoped permissions.",
+      eyebrow: t("publicHome.network.actor.partner.eyebrow"),
+      title: t("publicHome.network.actor.partner.title"),
+      text: t("publicHome.network.actor.partner.text"),
     },
   ];
 
   const flow = [
     {
       icon: UserRoundCheck,
-      title: "Patient request",
-      detail: "Consultation, travel, language, consent",
+      title: t("publicHome.network.flow.patient.title"),
+      detail: t("publicHome.network.flow.patient.detail"),
     },
     {
       icon: ShieldCheck,
-      title: "GCL routing",
-      detail: "Eligibility, provider fit, partner support",
+      title: t("publicHome.network.flow.routing.title"),
+      detail: t("publicHome.network.flow.routing.detail"),
     },
     {
       icon: Scale,
-      title: "Quote options",
-      detail: "Medical fee, non-medical fee, deposit",
+      title: t("publicHome.network.flow.quote.title"),
+      detail: t("publicHome.network.flow.quote.detail"),
     },
     {
       icon: CalendarCheck,
-      title: "Hold & booking",
-      detail: "Slot hold, alerts, payment, confirmation",
+      title: t("publicHome.network.flow.booking.title"),
+      detail: t("publicHome.network.flow.booking.detail"),
     },
   ];
 
@@ -181,16 +181,13 @@ function HeroSection() {
         <div className="max-w-4xl">
           <div className="mb-5 inline-flex items-center gap-2 rounded-md border border-teal-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-teal-800">
             <Languages className="size-4" />
-            GCL Network
+            {t("publicHome.network.kicker")}
           </div>
           <h1 className="text-balance font-serif text-5xl text-ink-950 sm:text-6xl lg:text-7xl">
-            Patients, hospitals, and care partners on one coordinated path.
+            {t("publicHome.network.title")}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-600">
-            Global Connected Lab connects international patient demand with
-            verified Korean providers and trusted partner operators, so quotes,
-            slots, deposits, and follow-up work move through one accountable
-            system.
+            {t("publicHome.network.copy")}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/consultation">
@@ -198,7 +195,7 @@ function HeroSection() {
                 size="lg"
                 className="btn-scale h-12 bg-teal-700 px-6 text-white hover:bg-teal-800"
               >
-                Start patient consultation
+                {t("publicHome.network.primary")}
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
@@ -208,7 +205,7 @@ function HeroSection() {
                 variant="outline"
                 className="h-12 border-ink-300 px-6 text-ink-800 hover:bg-ink-50"
               >
-                Explore GCL network
+                {t("publicHome.network.secondary")}
                 <Handshake className="size-4" />
               </Button>
             </Link>
@@ -239,10 +236,10 @@ function HeroSection() {
           <div className="mb-5 flex items-center justify-between border-b border-ink-100 pb-4">
             <div>
               <h2 className="font-serif text-2xl text-ink-950">
-                Live coordination map
+                {t("publicHome.network.map.title")}
               </h2>
               <p className="text-sm text-ink-500">
-                How one request moves across GCL actors.
+                {t("publicHome.network.map.copy")}
               </p>
             </div>
             <div className="grid size-10 place-items-center rounded-md bg-teal-50 text-teal-700">
@@ -280,7 +277,7 @@ function HeroSection() {
 
           <div className="mt-5 grid gap-3">
             <label className="grid gap-1.5 text-sm font-medium text-ink-700">
-              Fast provider preview
+              {t("publicHome.network.map.preview")}
               <select
                 value={goal}
                 onChange={event => setGoal(event.target.value)}
@@ -297,13 +294,15 @@ function HeroSection() {
               <div className="rounded-md border border-ink-200 p-3">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-ink-500">
                   <MapPin className="size-3.5 text-teal-700" />
-                  Destination
+                  {t("publicHome.network.map.destination")}
                 </div>
-                <div className="mt-1 text-sm text-ink-950">Seoul, Korea</div>
+                <div className="mt-1 text-sm text-ink-950">
+                  {t("publicHome.network.map.destinationValue")}
+                </div>
               </div>
               <div className="rounded-md border border-ink-200 p-3">
                 <div className="text-xs font-semibold text-ink-500">
-                  Typical request
+                  {t("publicHome.network.map.typicalRequest")}
                 </div>
                 <div className="mt-1 text-sm text-ink-950">$700 - $3k</div>
               </div>

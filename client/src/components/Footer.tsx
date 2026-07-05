@@ -26,7 +26,7 @@ export default function Footer() {
     opsSession.authenticated
   );
   const publicLinks = [
-    { href: "/network", label: "GCL Network" },
+    { href: "/network", label: t("nav.network") },
     { href: "/hospitals", label: t("nav.hospitals") },
     { href: "/treatments", label: t("nav.treatments") },
     { href: "/compare", label: t("nav.compare") },
