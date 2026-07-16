@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
 import {
   ArrowRight,
@@ -15,6 +16,10 @@ import {
   formatUsdRange,
   getSkinLandingPage,
   getSkinPackageById,
+  localizeSkinLandingPage,
+  localizeSkinPackage,
+  normalizeContentLocale,
+  type SkinLandingPage,
   type SkinPackageSku,
 } from "@/lib/wedgeData";
 import { SAMPLE_HOSPITALS } from "@/lib/sampleData";
@@ -79,11 +84,71 @@ const jpTrustCopy = {
   ],
 };
 
+interface RemoteLandingContent {
+  route: SkinLandingPage;
+  packages: SkinPackageSku[];
+}
+
 export default function SkinPackageLanding() {
   const { locale, slug } = useParams<{ locale: string; slug: string }>();
-  const page = getSkinLandingPage(locale, slug);
+  const [remoteContent, setRemoteContent] = useState<RemoteLandingContent | null>(
+    null
+  );
+  const [remoteStatus, setRemoteStatus] = useState<
+    "loading" | "ready" | "missing"
+  >("loading");
+
+  const staticPage = useMemo(() => {
+    const page = getSkinLandingPage(locale, slug);
+    return page ? localizeSkinLandingPage(page, locale) : undefined;
+  }, [locale, slug]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setRemoteStatus("loading");
+    setRemoteContent(null);
+
+    const params = new URLSearchParams({
+      locale: normalizeContentLocale(locale),
+      slug: slug || "",
+    });
+
+    fetch(`/api/public/landing-content?${params.toString()}`, {
+      signal: controller.signal,
+    })
+      .then(async response => {
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error("Landing content request failed.");
+        return (await response.json()) as RemoteLandingContent;
+      })
+      .then(payload => {
+        if (controller.signal.aborted) return;
+        setRemoteContent(payload);
+        setRemoteStatus(payload ? "ready" : "missing");
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setRemoteStatus("missing");
+      });
+
+    return () => controller.abort();
+  }, [locale, slug]);
+
+  const page = remoteContent?.route || staticPage;
 
   if (!page) {
+    if (remoteStatus === "loading") {
+      return (
+        <Layout>
+          <div className="container-wide py-24 text-center">
+            <h1 className="mb-4 font-serif text-4xl text-ink-950">
+              Loading landing content
+            </h1>
+          </div>
+        </Layout>
+      );
+    }
+
     return (
       <Layout>
         <div className="container-wide py-24 text-center">
@@ -98,15 +163,19 @@ export default function SkinPackageLanding() {
     );
   }
 
-  const packages = page.packageIds
-    .map(id => getSkinPackageById(id))
-    .filter((item): item is SkinPackageSku => Boolean(item));
+  const pageLocale = normalizeContentLocale(String(locale || page.locale));
+  const packages =
+    remoteContent?.packages?.length
+      ? remoteContent.packages.map(pkg => localizeSkinPackage(pkg, pageLocale))
+      : page.packageIds
+          .map(id => getSkinPackageById(id))
+          .filter((item): item is SkinPackageSku => Boolean(item))
+          .map(pkg => localizeSkinPackage(pkg, pageLocale));
   const dermatologyProviders = SAMPLE_HOSPITALS.filter(
     hospital =>
       hospital.specialty === "dermatology" || hospital.specialty === "wellness"
   ).slice(0, 3);
-  const pageLocale = String(page.locale);
-  const isJp = pageLocale === "jp" || pageLocale === "ja";
+  const isJp = pageLocale === "ja";
   const copy = isJp ? processCopy.jp : processCopy.en;
   const landingMarketLabel =
     page.market === "japan" && isJp ? "日本" : formatMarketLabel(page.market);

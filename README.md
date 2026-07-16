@@ -38,8 +38,10 @@ Without these values, the consultation form saves locally in demo mode.
 For the internal partner-assisted operations API, also set these only in Vercel project environment variables:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY` for admin auto-translation
+- `OPENAI_TRANSLATION_MODEL` optional, defaults to `gpt-4.1-mini`
 
-Do not prefix `SUPABASE_SERVICE_ROLE_KEY` with `VITE_`. It must stay server-only and is used by `/api/admin/partner-mvp`.
+Do not prefix `SUPABASE_SERVICE_ROLE_KEY` or `OPENAI_API_KEY` with `VITE_`. They must stay server-only and are used by Vercel API routes.
 
 Internal admin, partner, and provider access uses Supabase Auth email login. Apply the migrations, then insert allowed emails into `public.ops_user_access` with one of these role/scope shapes:
 

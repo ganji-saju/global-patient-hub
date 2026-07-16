@@ -43,10 +43,12 @@ import {
 } from "@/lib/partnerMvpApi";
 import { cn } from "@/lib/utils";
 
+const DEFAULT_TRANSLATION_TARGET_LOCALES = ["en", "ja", "zh", "ar"];
+
 const defaultDraft: ManagedLandingRoute = {
-  locale: "en",
+  locale: "ko",
   slug: "",
-  market: "anglophone",
+  market: "global",
   intent: "",
   title: "",
   subtitle: "",
@@ -56,6 +58,9 @@ const defaultDraft: ManagedLandingRoute = {
   packageIds: [],
   status: "draft",
   active: true,
+  translationSourceLocale: "ko",
+  autoTranslate: true,
+  targetLocales: DEFAULT_TRANSLATION_TARGET_LOCALES,
 };
 
 const defaultPackageDraft: ManagedPackageSku = {
@@ -73,6 +78,9 @@ const defaultPackageDraft: ManagedPackageSku = {
   complianceNote: "",
   source: "admin",
   active: true,
+  translationSourceLocale: "ko",
+  autoTranslate: true,
+  targetLocales: DEFAULT_TRANSLATION_TARGET_LOCALES,
 };
 
 const staticRoutes: ManagedLandingRoute[] = SKIN_LANDING_PAGES.map(page => ({
@@ -148,6 +156,24 @@ function splitLineList(value: string) {
     .split(/\r?\n/)
     .map(item => item.trim())
     .filter(Boolean);
+}
+
+function normalizeTranslationLocale(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "jp") return "ja";
+  if (normalized === "zh-cn" || normalized === "zh-tw") return "zh";
+  return normalized;
+}
+
+function splitLocaleList(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(",")
+        .map(normalizeTranslationLocale)
+        .filter(Boolean)
+    )
+  );
 }
 
 function StatusBadge({ status }: { status: LandingRouteStatus }) {
@@ -255,6 +281,7 @@ export default function AdminLandingRoutes() {
       ...current,
       locale,
       market: getDefaultMarketForLocale(locale),
+      translationSourceLocale: normalizeTranslationLocale(locale),
     }));
   };
 
@@ -406,7 +433,7 @@ export default function AdminLandingRoutes() {
     const nextRoute: ManagedLandingRoute = {
       ...draft,
       slug,
-      status: "draft",
+      status: draft.status || "draft",
       source: adminToken ? "admin" : "local",
       active: true,
     };
@@ -687,6 +714,65 @@ export default function AdminLandingRoutes() {
                   placeholder="korea-skin-package"
                 />
               </Field>
+
+              <Field label="Source locale">
+                <Input
+                  value={draft.translationSourceLocale ?? draft.locale}
+                  onChange={event =>
+                    updateDraft(
+                      "translationSourceLocale",
+                      normalizeTranslationLocale(event.target.value)
+                    )
+                  }
+                  placeholder="ko"
+                />
+              </Field>
+
+              <Field label="Target locales">
+                <Input
+                  value={(draft.targetLocales ?? []).join(", ")}
+                  onChange={event =>
+                    updateDraft(
+                      "targetLocales",
+                      splitLocaleList(event.target.value)
+                    )
+                  }
+                  placeholder="en, ja, zh, ar"
+                />
+              </Field>
+
+              <label className="flex items-center gap-2 rounded-md border border-ink-200 bg-white px-3 py-2 text-sm font-semibold text-ink-800 lg:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={Boolean(draft.autoTranslate)}
+                  onChange={event =>
+                    updateDraft("autoTranslate", event.target.checked)
+                  }
+                  className="size-4 rounded border-ink-300 accent-teal-700"
+                />
+                Auto-translate this landing copy on save
+              </label>
+
+              <div className="grid gap-1.5 lg:col-span-2">
+                <label className="text-sm font-semibold text-ink-800">
+                  Status
+                </label>
+                <select
+                  value={draft.status}
+                  onChange={event =>
+                    updateDraft(
+                      "status",
+                      event.target.value as LandingRouteStatus
+                    )
+                  }
+                  className="h-11 rounded-md border border-ink-200 bg-white px-3 text-sm text-ink-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="paused">Paused</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
               <Field label="검색 의도">
                 <Input
                   value={draft.intent}
@@ -914,6 +1000,44 @@ export default function AdminLandingRoutes() {
                   placeholder="en, ko, ar"
                 />
               </Field>
+
+              <Field label="Source locale" className="lg:col-span-2">
+                <Input
+                  value={packageDraft.translationSourceLocale ?? "ko"}
+                  onChange={event =>
+                    updatePackageDraft(
+                      "translationSourceLocale",
+                      normalizeTranslationLocale(event.target.value)
+                    )
+                  }
+                  placeholder="ko"
+                />
+              </Field>
+
+              <Field label="Target locales" className="lg:col-span-2">
+                <Input
+                  value={(packageDraft.targetLocales ?? []).join(", ")}
+                  onChange={event =>
+                    updatePackageDraft(
+                      "targetLocales",
+                      splitLocaleList(event.target.value)
+                    )
+                  }
+                  placeholder="en, ja, zh, ar"
+                />
+              </Field>
+
+              <label className="flex items-center gap-2 rounded-md border border-ink-200 bg-white px-3 py-2 text-sm font-semibold text-ink-800 lg:col-span-4">
+                <input
+                  type="checkbox"
+                  checked={Boolean(packageDraft.autoTranslate)}
+                  onChange={event =>
+                    updatePackageDraft("autoTranslate", event.target.checked)
+                  }
+                  className="size-4 rounded border-ink-300 accent-teal-700"
+                />
+                Auto-translate this package copy on save
+              </label>
               <Field label="추천 대상" className="lg:col-span-2">
                 <Input
                   value={packageDraft.bestFor}

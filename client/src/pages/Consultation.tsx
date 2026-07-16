@@ -29,7 +29,11 @@ import {
   submitInquiry,
   type InquiryResult,
 } from "@/lib/supabase";
-import { getSkinPackageById, SKIN_PACKAGE_SKUS } from "@/lib/wedgeData";
+import {
+  getSkinPackageById,
+  SKIN_PACKAGE_SKUS,
+  localizeSkinPackage,
+} from "@/lib/wedgeData";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -174,9 +178,13 @@ export default function Consultation() {
         String(hospital.id) === preselectedHospital
     );
   }, [preselectedHospital]);
-  const resolvedPackage = useMemo(
-    () => getSkinPackageById(preselectedPackage),
-    [preselectedPackage]
+  const resolvedPackage = useMemo(() => {
+    const pkg = getSkinPackageById(preselectedPackage);
+    return pkg ? localizeSkinPackage(pkg, lang) : undefined;
+  }, [lang, preselectedPackage]);
+  const packageOptions = useMemo(
+    () => SKIN_PACKAGE_SKUS.map(pkg => localizeSkinPackage(pkg, lang)),
+    [lang]
   );
 
   const {
@@ -208,10 +216,10 @@ export default function Consultation() {
   const selectedBudget = watch("budget");
   const partnerAssistanceMode = watch("partnerAssistanceMode");
   const selectedPartnerServices = watch("partnerServices") ?? [];
-  const selectedPackage = useMemo(
-    () => getSkinPackageById(selectedPackageId ?? ""),
-    [selectedPackageId]
-  );
+  const selectedPackage = useMemo(() => {
+    const pkg = getSkinPackageById(selectedPackageId ?? "");
+    return pkg ? localizeSkinPackage(pkg, lang) : undefined;
+  }, [lang, selectedPackageId]);
   const selectedHospital = useMemo(
     () =>
       SAMPLE_HOSPITALS.find(hospital => hospital.slug === selectedHospitalSlug),
@@ -530,7 +538,7 @@ export default function Consultation() {
                         className="h-11 w-full rounded-md border border-ink-200 bg-white px-3 text-sm text-ink-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                       >
                         <option value="">{t("consult.selectPackage")}</option>
-                        {SKIN_PACKAGE_SKUS.map(pkg => (
+                        {packageOptions.map(pkg => (
                           <option key={pkg.id} value={pkg.id}>
                             {pkg.id} / {pkg.shortTitle}
                           </option>

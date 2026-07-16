@@ -867,6 +867,10 @@ function normalizeLandingRoute(row) {
     active: Boolean(row.active),
     publishedAt: row.published_at || null,
     updatedAt: row.updated_at,
+    translations: row.translations || {},
+    translationSourceLocale: row.translation_source_locale || "ko",
+    translationProvider: row.translation_provider || null,
+    translatedAt: row.translated_at || null,
   };
 }
 
@@ -887,6 +891,10 @@ function normalizePackageSku(row) {
     source: row.source || "admin",
     active: Boolean(row.active),
     updatedAt: row.updated_at,
+    translations: row.translations || {},
+    translationSourceLocale: row.translation_source_locale || "ko",
+    translationProvider: row.translation_provider || null,
+    translatedAt: row.translated_at || null,
   };
 }
 
@@ -1036,12 +1044,12 @@ async function getAdminOperationsData(config) {
     safeList(
       config,
       "admin_landing_routes",
-      "select=id,locale,slug,market,intent,title,subtitle,search_theme,cta,secondary_cta,package_ids,status,source,active,published_at,updated_at&active=eq.true&order=updated_at.desc&limit=120"
+      "select=id,locale,slug,market,intent,title,subtitle,search_theme,cta,secondary_cta,package_ids,status,source,active,published_at,updated_at,translations,translation_source_locale,translation_provider,translated_at&active=eq.true&order=updated_at.desc&limit=120"
     ),
     safeList(
       config,
       "admin_package_skus",
-      "select=id,short_title,market,category,price_min_usd,price_max_usd,duration_days,recovery_window,coordinator_languages,best_for,includes,compliance_note,source,active,updated_at&order=updated_at.desc&limit=240"
+      "select=id,short_title,market,category,price_min_usd,price_max_usd,duration_days,recovery_window,coordinator_languages,best_for,includes,compliance_note,source,active,updated_at,translations,translation_source_locale,translation_provider,translated_at&order=updated_at.desc&limit=240"
     ),
     safeList(
       config,
@@ -1492,6 +1500,27 @@ const LANDING_ROUTE_STATUSES = new Set([
   "paused",
   "archived",
 ]);
+const DEFAULT_TRANSLATION_TARGET_LOCALES = ["en", "ja", "zh", "ar"];
+const TRANSLATION_LOCALE_ALIASES = {
+  jp: "ja",
+  "zh-cn": "zh",
+  "zh-tw": "zh",
+};
+const LANDING_TRANSLATION_FIELDS = [
+  "intent",
+  "title",
+  "subtitle",
+  "searchTheme",
+  "cta",
+  "secondaryCta",
+];
+const PACKAGE_TRANSLATION_FIELDS = [
+  "shortTitle",
+  "recoveryWindow",
+  "bestFor",
+  "includes",
+  "complianceNote",
+];
 const FACILITY_TYPES = new Set([
   "clinic",
   "hospital",
@@ -1572,6 +1601,153 @@ function cleanStringArray(value, limit = 12) {
   return Array.from(
     new Set(value.map(item => sanitizeText(item).slice(0, 160)).filter(Boolean))
   ).slice(0, limit);
+}
+
+function normalizeTranslationLocale(locale, fallback = "ko") {
+  const normalized = sanitizeText(locale, fallback).toLowerCase();
+  const aliased = TRANSLATION_LOCALE_ALIASES[normalized] || normalized;
+  return LANDING_ROUTE_LOCALE_PATTERN.test(aliased) ? aliased : fallback;
+}
+
+function cleanTranslationLocales(value, sourceLocale) {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : DEFAULT_TRANSLATION_TARGET_LOCALES;
+  return Array.from(
+    new Set(
+      raw
+        .map(item => normalizeTranslationLocale(item, ""))
+        .filter(locale => locale && locale !== sourceLocale)
+    )
+  ).slice(0, 12);
+}
+
+function cleanLocalizedCopy(value, fields) {
+  if (!value || typeof value !== "object") return null;
+  const copy = {};
+  for (const field of fields) {
+    if (field === "includes") {
+      const includes = cleanStringArray(value[field], 16);
+      if (includes.length) copy[field] = includes;
+      continue;
+    }
+    const text = sanitizeText(value[field]);
+    if (text) copy[field] = text;
+  }
+  return Object.keys(copy).length ? copy : null;
+}
+
+function cleanTranslations(value, fields) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const translations = {};
+  for (const [rawLocale, rawCopy] of Object.entries(value)) {
+    const locale = normalizeTranslationLocale(rawLocale, "");
+    const copy = cleanLocalizedCopy(rawCopy, fields);
+    if (locale && copy) translations[locale] = copy;
+  }
+  return translations;
+}
+
+function mergeTranslations(current, next) {
+  const merged = { ...current };
+  for (const [locale, copy] of Object.entries(next || {})) {
+    merged[locale] = { ...(merged[locale] || {}), ...copy };
+  }
+  return merged;
+}
+
+function hasTranslatableCopy(copy) {
+  return Object.values(copy || {}).some(value =>
+    Array.isArray(value) ? value.length > 0 : Boolean(sanitizeText(value))
+  );
+}
+
+function openAiTranslationModel() {
+  return process.env.OPENAI_TRANSLATION_MODEL || "gpt-4.1-mini";
+}
+
+function readOpenAiText(payload) {
+  const choiceText = payload?.choices?.[0]?.message?.content;
+  if (choiceText) return choiceText;
+  if (payload?.output_text) return payload.output_text;
+  const output = payload?.output;
+  if (!Array.isArray(output)) return "";
+  return output
+    .flatMap(item => item?.content || [])
+    .map(item => item?.text || "")
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function translateAdminCopy({
+  contentType,
+  sourceLocale,
+  targetLocales,
+  fields,
+  sourceCopy,
+}) {
+  if (!targetLocales.length || !hasTranslatableCopy(sourceCopy)) return {};
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new HttpError(
+      503,
+      "OPENAI_API_KEY is not configured for automatic translation."
+    );
+  }
+
+  const model = openAiTranslationModel();
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.1,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Translate the supplied medical tourism admin copy from its source locale into the requested locales. Preserve field names and arrays. Do not add medical guarantees, superlatives, unverifiable claims, prices, or clinical promises. Keep package codes, numbers, durations, and currency values unchanged. Return only valid JSON.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            contentType,
+            sourceLocale,
+            targetLocales,
+            fields,
+            sourceCopy,
+            responseShape:
+              "Return {\"translations\":{\"locale\":{\"field\":\"translated text\"}}}.",
+          }),
+        },
+      ],
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new HttpError(
+      response.status,
+      payload?.error?.message || "Automatic translation request failed."
+    );
+  }
+
+  const text = readOpenAiText(payload);
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    throw new HttpError(502, "Automatic translation returned invalid JSON.");
+  }
+
+  return cleanTranslations(parsed?.translations || parsed, fields);
 }
 
 function numberInRange(value, fallback, min, max) {
@@ -2685,6 +2861,18 @@ async function upsertLandingRoute(config, body) {
   const slug = normalizeSlug(route.slug);
   const title = sanitizeText(route.title);
   const intent = sanitizeText(route.intent);
+  const sourceLocale = normalizeTranslationLocale(
+    route.translationSourceLocale || route.translation_source_locale || locale,
+    "ko"
+  );
+  const sourceCopy = {
+    intent,
+    title,
+    subtitle: sanitizeText(route.subtitle),
+    searchTheme: sanitizeText(route.searchTheme || route.search_theme),
+    cta: sanitizeText(route.cta),
+    secondaryCta: sanitizeText(route.secondaryCta || route.secondary_cta),
+  };
 
   if (!LANDING_ROUTE_LOCALE_PATTERN.test(locale))
     throw new HttpError(400, "Unsupported landing route locale.");
@@ -2695,6 +2883,28 @@ async function upsertLandingRoute(config, body) {
   if (!slug || !title || !intent)
     throw new HttpError(400, "slug, title, and intent are required.");
 
+  let translations = mergeTranslations(
+    cleanTranslations(route.translations, LANDING_TRANSLATION_FIELDS),
+    { [sourceLocale]: sourceCopy }
+  );
+  let translationProvider = sanitizeText(
+    route.translationProvider || route.translation_provider
+  );
+  let translatedAt = sanitizeText(route.translatedAt || route.translated_at);
+
+  if (route.autoTranslate) {
+    const generated = await translateAdminCopy({
+      contentType: "landing_route",
+      sourceLocale,
+      targetLocales: cleanTranslationLocales(route.targetLocales, sourceLocale),
+      fields: LANDING_TRANSLATION_FIELDS,
+      sourceCopy,
+    });
+    translations = mergeTranslations(translations, generated);
+    translationProvider = `openai:${openAiTranslationModel()}`;
+    translatedAt = new Date().toISOString();
+  }
+
   await supabaseFetch(config, "admin_landing_routes?on_conflict=locale,slug", {
     method: "POST",
     body: JSON.stringify({
@@ -2703,15 +2913,19 @@ async function upsertLandingRoute(config, body) {
       market,
       intent,
       title,
-      subtitle: sanitizeText(route.subtitle),
-      search_theme: sanitizeText(route.searchTheme || route.search_theme),
-      cta: sanitizeText(route.cta),
-      secondary_cta: sanitizeText(route.secondaryCta || route.secondary_cta),
+      subtitle: sourceCopy.subtitle,
+      search_theme: sourceCopy.searchTheme,
+      cta: sourceCopy.cta,
+      secondary_cta: sourceCopy.secondaryCta,
       package_ids: cleanPackageIds(route.packageIds || route.package_ids),
       status,
       source: "admin",
       active: route.active !== false,
       published_at: status === "published" ? new Date().toISOString() : null,
+      translations,
+      translation_source_locale: sourceLocale,
+      translation_provider: translationProvider || null,
+      translated_at: translatedAt || null,
       updated_at: new Date().toISOString(),
     }),
     prefer: "resolution=merge-duplicates,return=minimal",
@@ -2738,6 +2952,19 @@ async function upsertPackageSku(config, body) {
   const durationDays = Math.round(
     numberInRange(input.durationDays ?? input.duration_days, 1, 1, 60)
   );
+  const sourceLocale = normalizeTranslationLocale(
+    input.translationSourceLocale || input.translation_source_locale || "ko",
+    "ko"
+  );
+  const sourceCopy = {
+    shortTitle,
+    recoveryWindow: sanitizeText(input.recoveryWindow || input.recovery_window),
+    bestFor: sanitizeText(input.bestFor || input.best_for),
+    includes: cleanStringArray(input.includes, 16),
+    complianceNote: sanitizeText(
+      input.complianceNote || input.compliance_note
+    ),
+  };
 
   if (!PACKAGE_SKU_ID_PATTERN.test(id))
     throw new HttpError(
@@ -2753,6 +2980,28 @@ async function upsertPackageSku(config, body) {
       "Package max price must be greater than or equal to min price."
     );
 
+  let translations = mergeTranslations(
+    cleanTranslations(input.translations, PACKAGE_TRANSLATION_FIELDS),
+    { [sourceLocale]: sourceCopy }
+  );
+  let translationProvider = sanitizeText(
+    input.translationProvider || input.translation_provider
+  );
+  let translatedAt = sanitizeText(input.translatedAt || input.translated_at);
+
+  if (input.autoTranslate) {
+    const generated = await translateAdminCopy({
+      contentType: "package_sku",
+      sourceLocale,
+      targetLocales: cleanTranslationLocales(input.targetLocales, sourceLocale),
+      fields: PACKAGE_TRANSLATION_FIELDS,
+      sourceCopy,
+    });
+    translations = mergeTranslations(translations, generated);
+    translationProvider = `openai:${openAiTranslationModel()}`;
+    translatedAt = new Date().toISOString();
+  }
+
   await supabaseFetch(config, "admin_package_skus?on_conflict=id", {
     method: "POST",
     body: JSON.stringify({
@@ -2763,19 +3012,19 @@ async function upsertPackageSku(config, body) {
       price_min_usd: priceMinUsd,
       price_max_usd: priceMaxUsd,
       duration_days: durationDays,
-      recovery_window: sanitizeText(
-        input.recoveryWindow || input.recovery_window
-      ),
+      recovery_window: sourceCopy.recoveryWindow,
       coordinator_languages: cleanTextArray(
         input.coordinatorLanguages || input.coordinator_languages
       ),
-      best_for: sanitizeText(input.bestFor || input.best_for),
-      includes: cleanStringArray(input.includes, 16),
-      compliance_note: sanitizeText(
-        input.complianceNote || input.compliance_note
-      ),
+      best_for: sourceCopy.bestFor,
+      includes: sourceCopy.includes,
+      compliance_note: sourceCopy.complianceNote,
       source: "admin",
       active: input.active !== false,
+      translations,
+      translation_source_locale: sourceLocale,
+      translation_provider: translationProvider || null,
+      translated_at: translatedAt || null,
       updated_at: new Date().toISOString(),
     }),
     prefer: "resolution=merge-duplicates,return=minimal",

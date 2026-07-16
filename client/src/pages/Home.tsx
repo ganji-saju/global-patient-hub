@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight,
@@ -32,7 +32,11 @@ import {
   SPECIALTY_LABELS,
   SPECIALTY_TRANSLATION_KEYS,
 } from "@/lib/sampleData";
-import { SKIN_PACKAGE_SKUS } from "@/lib/wedgeData";
+import {
+  SKIN_PACKAGE_SKUS,
+  localizeSkinPackage,
+  type SkinPackageSku,
+} from "@/lib/wedgeData";
 import { cn } from "@/lib/utils";
 
 const goals = [
@@ -342,8 +346,36 @@ function HeroSection() {
 }
 
 function WedgeSection() {
-  const { t } = useI18n();
-  const featuredPackages = SKIN_PACKAGE_SKUS.slice(0, 3);
+  const { t, lang } = useI18n();
+  const [remotePackages, setRemotePackages] = useState<SkinPackageSku[]>([]);
+  const featuredPackages = useMemo(
+    () =>
+      (remotePackages.length ? remotePackages : SKIN_PACKAGE_SKUS.slice(0, 3)).map(
+        pkg => localizeSkinPackage(pkg, lang)
+      ),
+    [lang, remotePackages]
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams({ locale: lang, limit: "3" });
+
+    fetch(`/api/public/package-skus?${params.toString()}`, {
+      signal: controller.signal,
+    })
+      .then(async response => {
+        if (!response.ok) return { packages: [] as SkinPackageSku[] };
+        return (await response.json()) as { packages?: SkinPackageSku[] };
+      })
+      .then(payload => {
+        if (!controller.signal.aborted) setRemotePackages(payload.packages ?? []);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setRemotePackages([]);
+      });
+
+    return () => controller.abort();
+  }, [lang]);
 
   return (
     <section className="section-padding bg-white">

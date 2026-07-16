@@ -2,6 +2,24 @@ import type { LanguageCode } from "./sampleData";
 import type { LandingLocale, WedgeMarket } from "./landingRouteOptions";
 export type { LandingLocale, WedgeMarket } from "./landingRouteOptions";
 
+export interface LocalizedSkinPackageCopy {
+  title?: string;
+  shortTitle?: string;
+  recoveryWindow?: string;
+  bestFor?: string;
+  includes?: string[];
+  complianceNote?: string;
+}
+
+export interface LocalizedSkinLandingCopy {
+  intent?: string;
+  title?: string;
+  subtitle?: string;
+  searchTheme?: string;
+  cta?: string;
+  secondaryCta?: string;
+}
+
 export interface SkinPackageSku {
   id: string;
   title: string;
@@ -16,6 +34,8 @@ export interface SkinPackageSku {
   includes: string[];
   bestFor: string;
   complianceNote: string;
+  translations?: Record<string, LocalizedSkinPackageCopy>;
+  translationSourceLocale?: string;
 }
 
 export interface SkinLandingPage {
@@ -29,6 +49,68 @@ export interface SkinLandingPage {
   cta: string;
   secondaryCta: string;
   packageIds: string[];
+  translations?: Record<string, LocalizedSkinLandingCopy>;
+  translationSourceLocale?: string;
+}
+
+const LOCALE_ALIASES: Record<string, string> = {
+  jp: "ja",
+  ja: "ja",
+  "zh-cn": "zh",
+  "zh-tw": "zh",
+};
+
+export function normalizeContentLocale(locale: string | undefined) {
+  const normalized = (locale || "en").toLowerCase();
+  return LOCALE_ALIASES[normalized] || normalized;
+}
+
+function localizedCopy<T>(
+  translations: Record<string, T> | undefined,
+  locale: string | undefined
+) {
+  const normalized = normalizeContentLocale(locale);
+  return (
+    translations?.[normalized] ||
+    translations?.[locale || ""] ||
+    translations?.en ||
+    translations?.ko ||
+    null
+  );
+}
+
+export function localizeSkinPackage(
+  pkg: SkinPackageSku,
+  locale: string | undefined
+): SkinPackageSku {
+  const copy = localizedCopy(pkg.translations, locale);
+  if (!copy) return pkg;
+  return {
+    ...pkg,
+    title: String(copy.title || copy.shortTitle || pkg.title),
+    shortTitle: String(copy.shortTitle || copy.title || pkg.shortTitle),
+    recoveryWindow: String(copy.recoveryWindow || pkg.recoveryWindow),
+    bestFor: String(copy.bestFor || pkg.bestFor),
+    includes: Array.isArray(copy.includes) ? copy.includes : pkg.includes,
+    complianceNote: String(copy.complianceNote || pkg.complianceNote),
+  };
+}
+
+export function localizeSkinLandingPage(
+  page: SkinLandingPage,
+  locale: string | undefined
+): SkinLandingPage {
+  const copy = localizedCopy(page.translations, locale);
+  if (!copy) return page;
+  return {
+    ...page,
+    intent: String(copy.intent || page.intent),
+    title: String(copy.title || page.title),
+    subtitle: String(copy.subtitle || page.subtitle),
+    searchTheme: String(copy.searchTheme || page.searchTheme),
+    cta: String(copy.cta || page.cta),
+    secondaryCta: String(copy.secondaryCta || page.secondaryCta),
+  };
 }
 
 export const SKIN_PACKAGE_SKUS: SkinPackageSku[] = [

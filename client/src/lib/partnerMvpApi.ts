@@ -77,6 +77,23 @@ export type OpsRole = "admin" | "partner" | "provider";
 export type LandingRouteStatus = "draft" | "published" | "paused" | "archived";
 export type ManagedPackageMarket = WedgeMarket | "both";
 
+export interface LocalizedLandingRouteCopy {
+  intent?: string;
+  title?: string;
+  subtitle?: string;
+  searchTheme?: string;
+  cta?: string;
+  secondaryCta?: string;
+}
+
+export interface LocalizedPackageSkuCopy {
+  shortTitle?: string;
+  recoveryWindow?: string;
+  bestFor?: string;
+  includes?: string[];
+  complianceNote?: string;
+}
+
 export interface ManagedLandingRoute {
   id?: string;
   locale: LandingLocale;
@@ -94,6 +111,12 @@ export interface ManagedLandingRoute {
   active?: boolean;
   publishedAt?: string | null;
   updatedAt?: string;
+  translations?: Record<string, LocalizedLandingRouteCopy>;
+  translationSourceLocale?: string;
+  translationProvider?: string | null;
+  translatedAt?: string | null;
+  autoTranslate?: boolean;
+  targetLocales?: string[];
 }
 
 export interface ManagedPackageSku {
@@ -112,6 +135,12 @@ export interface ManagedPackageSku {
   source?: string;
   active?: boolean;
   updatedAt?: string;
+  translations?: Record<string, LocalizedPackageSkuCopy>;
+  translationSourceLocale?: string;
+  translationProvider?: string | null;
+  translatedAt?: string | null;
+  autoTranslate?: boolean;
+  targetLocales?: string[];
 }
 
 export interface ContactChannelSetting {

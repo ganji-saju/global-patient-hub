@@ -73,6 +73,7 @@ supabase/migrations/20260625_0007_reservation_calendar_holds.sql
 supabase/migrations/20260625_0008_ops_email_access.sql
 supabase/migrations/20260626_0009_expand_landing_route_markets.sql
 supabase/migrations/20260626_0010_admin_package_skus.sql
+supabase/migrations/20260706_0011_admin_translation_payloads.sql
 ```
 
 Those migrations add the provider verification, patient eligibility, case CRM,
@@ -82,6 +83,7 @@ and links scheduled notification outbox rows to bookings.
 The operations email migration maps Supabase Auth emails to admin, partner, or provider scopes without issuing manual API tokens.
 The landing route expansion migration lets admins save global locale codes and market segments beyond the initial EN/JP Japan/Taiwan wedge.
 The package SKU migration lets admins add, edit, and hide package codes used by landing route drafts.
+The translation payload migration lets admin route and package records store generated locale-specific copy without exposing translation API keys to the browser.
 
 Example access rows:
 
